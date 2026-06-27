@@ -678,3 +678,5 @@ label {
 .toast.toast-error { border-left-color: var(--danger); }
 @keyframes toast-in { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @media (max-width: 600px) { .toast-container { left: 16px; right: 16px; max-width: none; } }
+
+select option { background-color: #0d0d16; color: #f0f0ff; }
