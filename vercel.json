@@ -1,4 +1,4 @@
-{
+﻿{
   "rewrites": [
     { "source": "/api/challenges",  "destination": "/api/challenges"  },
     { "source": "/api/submit",      "destination": "/api/submit"      },
@@ -6,6 +6,6 @@
     { "source": "/api/progress",    "destination": "/api/progress"    },
     { "source": "/api/leaderboard", "destination": "/api/leaderboard" },
     { "source": "/api/seed",        "destination": "/api/seed"        },
-    { "source": "/(.*)",            "destination": "/frontend/$1"     }
+    { "source": "/(.*)",            "destination": "/frontend/\"    }
   ]
 }
