@@ -6,6 +6,6 @@
     { "source": "/api/progress",    "destination": "/api/progress"    },
     { "source": "/api/leaderboard", "destination": "/api/leaderboard" },
     { "source": "/api/seed",        "destination": "/api/seed"        },
-    { "source": "/(.*)",            "destination": "/frontend/\"    }
+    { "source": "/(.*)",            "destination": "/frontend/$1"     }
   ]
 }
