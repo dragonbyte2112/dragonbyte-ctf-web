@@ -1,17 +1,23 @@
-// api/_clerk.js — Firebase JWT verification (replaces Clerk)
+// api/_clerk.js — Firebase JWT verification
 import { initAdmin } from "./_firebase.js";
 import { getAuth } from "firebase-admin/auth";
 
 export async function requireAuth(req, res) {
   const header = req.headers["authorization"] || "";
   const token = header.replace("Bearer ", "").trim();
-  if (!token) { res.status(401).json({ detail: "Not authenticated" }); return null; }
+  if (!token) {
+    console.error("No token provided");
+    res.status(401).json({ detail: "Not authenticated" });
+    return null;
+  }
   try {
     initAdmin();
     const decoded = await getAuth().verifyIdToken(token);
+    console.log("Token verified for uid:", decoded.uid);
     return { userId: decoded.uid, username: decoded.name || decoded.email || decoded.uid };
   } catch (err) {
-    res.status(401).json({ detail: "Invalid token" });
+    console.error("Token verification failed:", err.code, err.message);
+    res.status(401).json({ detail: "Invalid token: " + err.message });
     return null;
   }
 }
