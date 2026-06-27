@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="css/style.css">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyDLZduxpcBJxKbkuy5tfORmDqg7WJwxyd8",
     authDomain: "dragonbytes-ctf.firebaseapp.com",
@@ -20,8 +20,9 @@
   };
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  await setPersistence(auth, browserLocalPersistence);
   window.__fbAuth = auth;
-  window.__fbFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup };
+  window.__fbFns = { setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup };
 </script>
 </head>
 <body>
