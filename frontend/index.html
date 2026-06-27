@@ -3,11 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dragon Byte | CTF Arena</title>
+<title>Dragon Bytes | CTF Arena</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐉</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  CLERK AUTH — Replace the script tag below with the one     ║
+  ║  from: Clerk Dashboard → API Keys → Quickstart → HTML       ║
+  ║  It will look like:                                         ║
+  ║  <script                                                    ║
+  ║    async crossorigin="anonymous"                            ║
+  ║    data-clerk-publishable-key="pk_live_xxxxx"               ║
+  ║    src="https://xxxx.clerk.accounts.dev/npm/..."            ║
+  ║  ></script>                                                 ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<script
+  async
+  crossorigin="anonymous"
+  data-clerk-publishable-key="PASTE_YOUR_CLERK_PUBLISHABLE_KEY"
+  src="https://PASTE_YOUR_CLERK_FRONTEND_API.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+  type="text/javascript"
+></script>
 </head>
 <body>
 
@@ -18,7 +38,7 @@
   <div class="sidebar-brand">
     <span class="brand-dragon">🐉</span>
     <div>
-      <div class="brand-name">Dragon Byte</div>
+      <div class="brand-name">Dragon Bytes</div>
       <div class="brand-tagline">CTF Arena</div>
     </div>
   </div>
@@ -54,22 +74,20 @@
 
   <div class="sidebar-divider"></div>
 
-  <div id="auth-box" class="auth-box">
-    <!-- filled by app.js depending on login state -->
-  </div>
+  <div id="auth-box" class="auth-box"></div>
 
   <div class="sidebar-footer">
     <div>🐉 Dragon Bytes Community</div>
-    <div class="sidebar-footer-sub">Season 2025 • v2.0 Web</div>
+    <div class="sidebar-footer-sub">Season 2025 • v3.0 Web</div>
   </div>
 </aside>
 
 <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">☰</button>
 
-<!-- ═══ MAIN CONTENT ═══ -->
+<!-- ═══ MAIN ═══ -->
 <main class="main-content">
 
-  <!-- HOME PAGE -->
+  <!-- HOME -->
   <section class="page" id="page-home">
     <div class="hero-section">
       <div class="hero-glow"></div>
@@ -201,7 +219,7 @@
     </div>
   </section>
 
-  <!-- ARENA PAGE -->
+  <!-- ARENA -->
   <section class="page hidden" id="page-arena">
     <div class="page-header">
       <span class="section-eyebrow">Dragon Bytes</span>
@@ -213,7 +231,10 @@
       <div class="empty-icon">🔒</div>
       <h3>Sign in to play</h3>
       <p>Create a free account to track your score and appear on the leaderboard.</p>
-      <button class="btn btn-primary" id="arena-gate-signin">Sign in / Register</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        <button class="btn btn-primary" id="arena-gate-signin">🔑 Sign In</button>
+        <button class="btn" id="arena-gate-signup">📝 Register Free</button>
+      </div>
     </div>
 
     <div id="arena-content">
@@ -240,9 +261,7 @@
       </div>
 
       <hr class="divider">
-
       <div id="challenge-area"></div>
-
       <hr class="divider">
 
       <div class="section-header" style="margin-top:1rem">
@@ -253,7 +272,7 @@
     </div>
   </section>
 
-  <!-- LEADERBOARD PAGE -->
+  <!-- LEADERBOARD -->
   <section class="page hidden" id="page-leaderboard">
     <div class="page-header">
       <span class="section-eyebrow">Dragon Bytes</span>
@@ -269,14 +288,13 @@
     <p class="info-banner">💡 Complete more challenges to climb the leaderboard. Rankings update in real time across all players.</p>
   </section>
 
-  <!-- RESOURCES PAGE -->
+  <!-- RESOURCES -->
   <section class="page hidden" id="page-resources">
     <div class="page-header">
       <span class="section-eyebrow">Dragon Bytes</span>
       <h1>📚 Learning Resources</h1>
       <p>Curated materials for every skill level — from beginner to expert.</p>
     </div>
-
     <div class="tabs" id="resource-tabs">
       <button class="tab-btn tab-active" data-tab="getting-started">🚀 Getting Started</button>
       <button class="tab-btn" data-tab="cybersecurity">🔐 Cybersecurity</button>
@@ -289,24 +307,7 @@
 
 </main>
 
-<!-- ═══ AUTH MODAL ═══ -->
-<div class="modal-overlay hidden" id="auth-modal">
-  <div class="modal">
-    <button class="modal-close" id="auth-modal-close">&times;</button>
-    <div class="modal-tabs">
-      <button class="modal-tab modal-tab-active" id="tab-login">Sign In</button>
-      <button class="modal-tab" id="tab-register">Register</button>
-    </div>
-    <form id="auth-form">
-      <div class="dragon-icon-modal">🐉</div>
-      <input type="text" id="auth-username" placeholder="Username" required autocomplete="username">
-      <input type="password" id="auth-password" placeholder="Password" required autocomplete="current-password">
-      <div id="auth-error" class="auth-error hidden"></div>
-      <button type="submit" class="btn btn-primary" id="auth-submit">Sign In</button>
-    </form>
-  </div>
-</div>
-
+<!-- Clerk renders its Sign In / Sign Up modals inside the body automatically -->
 <script src="/js/data.js"></script>
 <script src="/js/app.js"></script>
 </body>

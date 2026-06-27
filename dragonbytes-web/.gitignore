@@ -1,5 +1,0 @@
-__pycache__/
-*.pyc
-backend/data/dragonbytes.db
-.venv/
-*.egg-info/
