@@ -1,1 +1,141 @@
-placeholder
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragon Bytes | CTF Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyDLZduxpcBJxKbkuy5tfORmDqg7WJwxyd8",
+    authDomain: "dragonbytes-ctf.firebaseapp.com",
+    projectId: "dragonbytes-ctf",
+    storageBucket: "dragonbytes-ctf.firebasestorage.app",
+    messagingSenderId: "208145745830",
+    appId: "1:208145745830:web:c562ba193a682d56857167"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  window.__fbAuth = auth;
+  window.__fbFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile };
+</script>
+</head>
+<body>
+<div id="toast-container" class="toast-container"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-dragon">&#x1F409;</span>
+    <div><div class="brand-name">Dragon Bytes</div><div class="brand-tagline">CTF Arena</div></div>
+  </div>
+  <div class="sidebar-divider"></div>
+  <nav class="sidebar-nav">
+    <button class="nav-btn nav-active" data-page="home">&#x1F3E0; Home</button>
+    <button class="nav-btn" data-page="arena">&#x2694;&#xFE0F; CTF Arena</button>
+    <button class="nav-btn" data-page="leaderboard">&#x1F4CA; Leaderboard</button>
+    <button class="nav-btn" data-page="resources">&#x1F4DA; Resources</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="stats-panel" id="sidebar-stats">
+    <div class="stat-row"><span class="stat-label">Score</span><span class="stat-value" id="stat-score">0</span></div>
+    <div class="stat-row"><span class="stat-label">Solved</span><span class="stat-value" id="stat-solved">0/49</span></div>
+    <div class="stat-row"><span class="stat-label">Rank</span><span class="stat-value" id="stat-rank">Rookie</span></div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="sidebar-progress-fill" style="width:0%"></div></div>
+  <div class="progress-caption" id="sidebar-progress-caption">0.0% complete</div>
+  <div class="sidebar-divider"></div>
+  <div id="auth-box" class="auth-box"></div>
+  <div class="sidebar-footer"><div>Dragon Bytes Community</div></div>
+</aside>
+<button class="mobile-nav-toggle" id="mobile-nav-toggle">&#9776;</button>
+<main class="main-content">
+  <section class="page" id="page-home">
+    <div class="hero-section">
+      <div class="dragon-icon-hero">&#x1F409;</div>
+      <h1 class="hero-title">Dragon Bytes</h1>
+      <p class="hero-subtitle">Student-Driven Cybersecurity · AI · Innovation</p>
+      <p class="hero-description">A community of curious minds breaking, building, and securing the digital world.</p>
+    </div>
+    <div class="hero-cta-row">
+      <button class="btn btn-primary" data-page="arena">Enter CTF Arena</button>
+      <button class="btn btn-secondary" data-page="resources">Resources</button>
+    </div>
+    <hr class="divider">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-number">500+</div><div class="stat-desc">Members</div></div>
+      <div class="stat-card"><div class="stat-number">49</div><div class="stat-desc">Challenges</div></div>
+      <div class="stat-card"><div class="stat-number">7</div><div class="stat-desc">Categories</div></div>
+      <div class="stat-card"><div class="stat-number">30+</div><div class="stat-desc">Projects</div></div>
+    </div>
+  </section>
+  <section class="page hidden" id="page-arena">
+    <div class="page-header"><h1>CTF Arena</h1><p>Select a category, generate a challenge, and submit your flag.</p></div>
+    <div id="arena-login-gate" class="empty-state hidden">
+      <div class="empty-icon">&#x1F512;</div>
+      <h3>Sign in to play</h3>
+      <p>Create a free account to track your score.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+        <button class="btn btn-primary" id="arena-gate-signin">Sign In</button>
+        <button class="btn" id="arena-gate-signup">Register Free</button>
+      </div>
+    </div>
+    <div id="arena-content">
+      <div class="filter-row">
+        <div class="filter-group"><label for="category-select">Category</label><select id="category-select"></select></div>
+        <div class="filter-group"><label for="difficulty-select">Difficulty</label>
+          <select id="difficulty-select">
+            <option value="All">All</option><option value="Easy">Easy</option>
+            <option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Insane">Insane</option>
+          </select>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="generate-btn">Generate Challenge</button>
+        <button class="btn btn-secondary" id="clear-btn">Clear</button>
+      </div>
+      <hr class="divider">
+      <div id="challenge-area"></div>
+      <hr class="divider">
+      <div id="category-progress-list"></div>
+    </div>
+  </section>
+  <section class="page hidden" id="page-leaderboard">
+    <div class="page-header"><h1>Leaderboard</h1></div>
+    <div class="leaderboard-table">
+      <div class="lb-header"><span>Rank</span><span>Username</span><span>Score</span><span>Solved</span></div>
+      <div id="leaderboard-rows"></div>
+    </div>
+  </section>
+  <section class="page hidden" id="page-resources">
+    <div class="page-header"><h1>Resources</h1></div>
+    <div class="tabs">
+      <button class="tab-btn tab-active" data-tab="getting-started">Getting Started</button>
+      <button class="tab-btn" data-tab="cybersecurity">Cybersecurity</button>
+      <button class="tab-btn" data-tab="tools">Tools</button>
+      <button class="tab-btn" data-tab="ctf-practice">CTF Practice</button>
+    </div>
+    <div id="resource-tab-content"></div>
+  </section>
+</main>
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal">
+    <button class="modal-close" id="auth-modal-close">&times;</button>
+    <div class="modal-tabs">
+      <button class="modal-tab modal-tab-active" id="tab-login">Sign In</button>
+      <button class="modal-tab" id="tab-register">Register</button>
+    </div>
+    <div class="dragon-icon-modal">&#x1F409;</div>
+    <div id="auth-username-row"><input type="text" id="auth-username" placeholder="Username" autocomplete="username"></div>
+    <input type="email" id="auth-email" placeholder="Email address" required autocomplete="email">
+    <input type="password" id="auth-password" placeholder="Password (min 6 chars)" required autocomplete="current-password">
+    <div id="auth-error" class="auth-error hidden"></div>
+    <button class="btn btn-primary btn-block" id="auth-submit" style="margin-top:12px">Sign In</button>
+  </div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
