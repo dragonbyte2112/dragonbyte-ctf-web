@@ -11,7 +11,7 @@
   import { GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   window.__fbProviders = { GoogleAuthProvider, GithubAuthProvider, signInWithPopup };
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyDLZduxpcBJxKbkuy5tfORmDqg7WJwxyd8",
     authDomain: "dragonbytes-ctf.firebaseapp.com",
@@ -134,7 +134,7 @@
     <input type="email" id="auth-email" placeholder="Email address" required autocomplete="email">
     <input type="password" id="auth-password" placeholder="Password (min 6 chars)" required autocomplete="current-password">
     <div id="auth-error" class="auth-error hidden"></div>
-    <button class="btn btn-primary btn-block" id="auth-submit" style="margin-top:12px">Sign In</button>
+    <button class="btn btn-primary btn-block" id="auth-submit" style="margin-top:12px">Sign In</button><div style="text-align:center;margin:10px 0;color:#666;font-size:13px">or</div><button class="btn btn-block" id="google-signin-btn" style="background:#fff;color:#222;margin-bottom:8px">🌐 Google</button><button class="btn btn-block" id="github-signin-btn" style="background:#24292e;color:#fff">🐙 GitHub</button>
     <div style="text-align:center;margin:12px 0;color:#666;font-size:13px">— or continue with —</div>
     <button class="btn btn-block" id="google-signin-btn" style="background:#fff;color:#222;margin-bottom:8px">🌐 Continue with Google</button>
     <button class="btn btn-block" id="github-signin-btn" style="background:#24292e;color:#fff">🐙 Continue with GitHub</button>
