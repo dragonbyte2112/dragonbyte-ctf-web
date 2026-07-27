@@ -174,7 +174,7 @@ async function submitRoomFlag(questionId) {
   if (!flag) return;
   if (!state.user) { toast("Sign in to submit flags.", "error"); return; }
   try {
-    const result = await api(`/room_submit?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+    const result = await api(`/submit?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
       method: "POST", auth: true, body: { flag },
     });
     const q = roomState.questions.find(x => x.id === questionId);
@@ -196,7 +196,7 @@ async function submitRoomFlag(questionId) {
 
 async function revealRoomHint(questionId) {
   try {
-    const result = await api(`/room_hint?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+    const result = await api(`/hint?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
       method: "POST", auth: true,
     });
     const q = roomState.questions.find(x => x.id === questionId);
@@ -255,7 +255,7 @@ async function uploadRoomQuestionFile(questionId) {
 
   try {
     const fileBase64 = await fileToBase64(file);
-    await api("/admin_room_question_file", {
+    await api("/room_question_file", {
       method: "POST",
       auth:   true,
       body:   { roomId: roomState.currentRoom, questionId, filename: file.name, contentType: file.type, fileBase64 },
@@ -272,7 +272,7 @@ async function uploadRoomQuestionFile(questionId) {
 async function deleteRoomQuestionFile(questionId) {
   if (!confirm("Remove the attached file from this question?")) return;
   try {
-    await api(`/admin_room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+    await api(`/room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
       method: "DELETE", auth: true,
     });
     toast("File removed.", "success");
@@ -289,7 +289,7 @@ async function loadRoomLeaderboard() {
   if (!el) return;
   el.innerHTML = `<div class="lb-row"><span></span><span>Loading&hellip;</span><span></span><span></span></div>`;
   try {
-    const leaders = await api(`/room_leaderboard?roomId=${encodeURIComponent(roomState.currentRoom)}`);
+    const leaders = await api(`/leaderboard?roomId=${encodeURIComponent(roomState.currentRoom)}`);
     if (!leaders.length) {
       el.innerHTML = `<div class="lb-row"><span></span><span>No solves yet — be the first!</span><span></span><span></span></div>`;
       return;

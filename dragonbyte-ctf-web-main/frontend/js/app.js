@@ -431,7 +431,7 @@ async function uploadChallengeFile(challengeId) {
   btn.textContent = "Uploading…";
   try {
     const fileBase64 = await fileToBase64(file);
-    await api("/admin_challenge_file", {
+    await api("/challenge_file", {
       method: "POST",
       auth:   true,
       body:   { challengeId, filename: file.name, contentType: file.type, fileBase64 },
@@ -453,7 +453,7 @@ async function uploadChallengeFile(challengeId) {
 async function deleteChallengeFile(challengeId) {
   if (!confirm("Remove the attached file from this challenge?")) return;
   try {
-    await api(`/admin_challenge_file?challengeId=${encodeURIComponent(challengeId)}`, {
+    await api(`/challenge_file?challengeId=${encodeURIComponent(challengeId)}`, {
       method: "DELETE",
       auth:   true,
     });

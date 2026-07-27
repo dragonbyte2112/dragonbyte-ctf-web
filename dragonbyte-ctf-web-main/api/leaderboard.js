@@ -1,4 +1,5 @@
-// api/leaderboard.js — GET /api/leaderboard
+// api/leaderboard.js — GET /api/leaderboard (global Arena) or ?roomId=... (Competition Room)
+// Merged into one file/function (Vercel Hobby plan caps at 12 functions).
 import { getFirestore } from "firebase-admin/firestore";
 import { initAdmin }    from "./_firebase.js";
 import { cors }         from "./_auth.js";
@@ -10,7 +11,29 @@ export default async function handler(req, res) {
 
   try {
     initAdmin();
-    const snap = await getFirestore()
+    const db = getFirestore();
+    const { roomId } = req.query;
+
+    // ── Room leaderboard ───────────────────────────────────────
+    if (roomId) {
+      const snap = await db
+        .collection("rooms")
+        .doc(String(roomId))
+        .collection("scores")
+        .orderBy("score", "desc")
+        .limit(100)
+        .get();
+
+      return res.status(200).json(
+        snap.docs.map((d, i) => {
+          const { username = "Player", score = 0, solvedCount = 0 } = d.data();
+          return { rank: i + 1, username, score, solved_count: solvedCount };
+        })
+      );
+    }
+
+    // ── Global Arena leaderboard ───────────────────────────────
+    const snap = await db
       .collection("users")
       .orderBy("score", "desc")
       .limit(100)
