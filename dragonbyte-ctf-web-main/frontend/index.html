@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragon Byte | CTF Arena</title>
+<meta name="description" content="Dragon Byte — Student-driven cybersecurity CTF platform. Compete, learn, and level up.">
+<meta property="og:title"       content="Dragon Byte CTF Arena">
+<meta property="og:description" content="Student-driven cybersecurity competitions and challenges.">
+<meta property="og:image"       content="/images/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<!-- Firebase v10 (ESM from CDN — no bundler needed) -->
+<script type="module">
+  import { initializeApp }                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged, updateProfile,
+    GoogleAuthProvider, GithubAuthProvider, signInWithPopup,
+    browserLocalPersistence, setPersistence
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── YOUR Firebase project config ────────────────────────────────────────
+  // These values come from Firebase Console → Project Settings → Your apps → Web app
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDLZduxpcBJxKbkuy5tfORmDqg7WJwxyd8",
+    authDomain:        "dragonbytes-ctf.firebaseapp.com",
+    projectId:         "dragonbytes-ctf",
+    storageBucket:     "dragonbytes-ctf.firebasestorage.app",
+    messagingSenderId: "208145745830",
+    appId:             "1:208145745830:web:c562ba193a682d56857167"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Keep user signed in across browser sessions
+  await setPersistence(auth, browserLocalPersistence);
+
+  // Expose to non-module scripts
+  window.__fbAuth = auth;
+  window.__fbFns  = {
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged, updateProfile,
+    GoogleAuthProvider, GithubAuthProvider, signInWithPopup,
+  };
+  window.__fbReady = true;
+</script>
+</head>
+
+<body>
+<!-- ── Toast container ──────────────────────────────────────────────────── -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="images/logo.png" alt="Dragon Byte logo" style="width:55px;height:55px;border-radius:50%;object-fit:cover;">
+    <div>
+      <div class="brand-name">Dragon Byte</div>
+      <div class="brand-tagline">CTF Arena</div>
+    </div>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <nav class="sidebar-nav">
+    <button class="nav-btn nav-active" data-page="home">🏠 Home</button>
+    <button class="nav-btn" data-page="arena">⚔️ CTF Arena</button>
+    <button class="nav-btn" data-page="rooms">🏆 Competition Rooms</button>
+    <button class="nav-btn" data-page="leaderboard">📊 Leaderboard</button>
+    <button class="nav-btn" data-page="resources">📚 Resources</button>
+  </nav>
+
+  <div class="sidebar-divider"></div>
+
+  <!-- Live score panel -->
+  <div class="stats-panel" id="sidebar-stats">
+    <div class="stat-row">
+      <span class="stat-label">⚡ Score</span>
+      <span class="stat-value" id="stat-score">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">🎯 Solved</span>
+      <span class="stat-value" id="stat-solved">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">🏅 Rank</span>
+      <span class="stat-value" id="stat-rank">Rookie</span>
+    </div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="sidebar-progress-fill" style="width:0%"></div>
+  </div>
+  <div class="progress-caption" id="sidebar-progress-caption">Sign in to track progress</div>
+
+  <div class="sidebar-divider"></div>
+
+  <!-- Auth box (sign in / signed-in state) -->
+  <div id="auth-box" class="auth-box"></div>
+
+  <div class="sidebar-footer">Dragon Byte Community · dragonbyte.co.in</div>
+</aside>
+
+<!-- Mobile hamburger -->
+<button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle menu">☰</button>
+
+<!-- ── Main content ──────────────────────────────────────────────────────── -->
+<main class="main-content">
+
+  <!-- HOME ──────────────────────────────────────────────────────────────── -->
+  <section class="page" id="page-home">
+    <div class="hero-section">
+      <img src="images/logo.png" alt="Dragon Byte" style="width:110px;height:110px;border-radius:50%;object-fit:cover;margin-bottom:16px;">
+      <h1 class="hero-title">DRAGON BYTE</h1>
+      <p class="hero-subtitle">Student-Driven Cybersecurity · AI · Innovation</p>
+      <p class="hero-description">A community of curious minds breaking, building, and securing the digital world. Compete in CTF challenges. Build real projects. Learn from each other.</p>
+    </div>
+
+    <div class="hero-cta-row">
+      <button class="btn btn-primary" data-page="arena">⚔️ Enter CTF Arena</button>
+      <button class="btn btn-secondary" data-page="resources">📚 Resources</button>
+    </div>
+    <div class="hero-cta-row" style="margin-top:12px">
+      <a href="https://www.dragonbyte.co.in/" target="_blank" rel="noopener" class="btn btn-primary">🌐 Website</a>
+      <a href="https://www.instagram.com/team_dragon_byte/" target="_blank" rel="noopener" class="btn" style="background:#E1306C;color:#fff">📸 Instagram</a>
+      <a href="https://www.linkedin.com/groups/29880013/" target="_blank" rel="noopener" class="btn" style="background:#0077B5;color:#fff">💼 LinkedIn</a>
+    </div>
+
+    <hr class="divider">
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-number">25+</div><div class="stat-desc">Members</div></div>
+      <div class="stat-card"><div class="stat-number">50</div><div class="stat-desc">Challenges</div></div>
+      <div class="stat-card"><div class="stat-number">7</div><div class="stat-desc">Categories</div></div>
+      <div class="stat-card"><div class="stat-number">20+</div><div class="stat-desc">Projects</div></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-header">
+      <span class="section-eyebrow">Who We Are</span>
+      <h2>About Dragon Byte</h2>
+    </div>
+    <div class="two-col">
+      <div class="content-card">
+        <p>Dragon Byte is a <strong>student-led cybersecurity and technology community</strong> passionate about hacking, building, and innovating. We organize CTF competitions, workshops, and collaborative projects.</p>
+        <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+          <a href="https://www.dragonbyte.co.in/" target="_blank" rel="noopener" class="btn btn-primary">🌐 Visit Website</a>
+          <a href="https://www.instagram.com/team_dragon_byte/" target="_blank" rel="noopener" class="btn" style="background:#E1306C;color:#fff">📸 Instagram</a>
+        </div>
+      </div>
+      <div class="highlight-card">
+        <div class="highlight-item">🐉 Founded 2025</div>
+        <div class="highlight-item">🎓 Student-driven</div>
+        <div class="highlight-item">🌍 Open to everyone</div>
+        <div class="highlight-item">💡 Learn by doing</div>
+        <div class="highlight-item">🔓 Free and open</div>
+        <div class="highlight-item">🌐 dragonbyte.co.in</div>
+      </div>
+    </div>
+
+    <!-- Activities rendered by JS -->
+    <hr class="divider">
+    <div class="section-header"><span class="section-eyebrow">What We Do</span><h2>Community Activities</h2></div>
+    <div id="home-activities" class="three-col"></div>
+
+    <!-- Events -->
+    <hr class="divider">
+    <div class="section-header"><span class="section-eyebrow">Mark Your Calendar</span><h2>Upcoming Events</h2></div>
+    <div id="home-events"></div>
+
+    <!-- Team -->
+    <hr class="divider">
+    <div class="section-header"><span class="section-eyebrow">The People</span><h2>Core Team</h2></div>
+    <div id="home-team" class="three-col"></div>
+
+    <!-- Join form -->
+    <hr class="divider">
+    <div class="section-header"><span class="section-eyebrow">Get Involved</span><h2>Join Dragon Byte</h2></div>
+    <div class="two-col">
+      <div>
+        <div class="content-card" style="margin-bottom:16px">
+          <h3 style="color:var(--fire);margin-bottom:8px">Ready to level up?</h3>
+          <p>Dragon Byte is open to all students — no prior experience required.</p>
+        </div>
+        <input  class="form-input" id="join-name"    type="text"  placeholder="Full name">
+        <input  class="form-input" id="join-email"   type="email" placeholder="you@college.edu">
+        <input  class="form-input" id="join-college" type="text"  placeholder="Your institution">
+        <button class="btn btn-primary" style="width:100%;margin-top:8px" id="join-submit-btn">🐉 Send Application</button>
+        <div id="join-feedback" style="margin-top:10px"></div>
+      </div>
+      <div class="highlight-card">
+        <div class="highlight-item">📧 hello@dragonbyte.co.in</div>
+        <div class="highlight-item">🌐 dragonbyte.co.in</div>
+        <div class="highlight-item">📸 @team_dragon_byte</div>
+        <div class="highlight-item">📅 Weekly meetups — Saturdays</div>
+        <div class="highlight-item">🕐 18:00 – 20:00 IST</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARENA ─────────────────────────────────────────────────────────────── -->
+  <section class="page hidden" id="page-arena">
+    <div class="page-header">
+      <h1>⚔️ CTF Arena</h1>
+      <p>Select a category, generate a challenge, and submit your flag.</p>
+    </div>
+
+    <!-- Login gate (shown when signed out) -->
+    <div id="arena-login-gate" class="empty-state hidden">
+      <div class="empty-icon">🔒</div>
+      <h3>Sign in to play</h3>
+      <p>Create a free account to track your score and appear on the leaderboard.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+        <button class="btn btn-primary" id="arena-gate-signin">Sign In</button>
+        <button class="btn btn-secondary" id="arena-gate-signup">Register Free</button>
+      </div>
+    </div>
+
+    <!-- Arena content (shown when signed in) -->
+    <div id="arena-content">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="category-select">Category</label>
+          <select id="category-select">
+            <option value="web">🌐 Web Exploitation</option>
+            <option value="crypto">🔐 Cryptography</option>
+            <option value="forensics">🔍 Digital Forensics</option>
+            <option value="binary">💻 Binary / Pwn</option>
+            <option value="stego">🖼️ Steganography</option>
+            <option value="ai_ml">🤖 AI & ML Security</option>
+            <option value="osint">🕵️ OSINT</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="difficulty-select">Difficulty</label>
+          <select id="difficulty-select">
+            <option value="All">All</option>
+            <option value="Easy">🟢 Easy</option>
+            <option value="Medium">🟡 Medium</option>
+            <option value="Hard">🔴 Hard</option>
+            <option value="Insane">🟣 Insane</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-primary" id="generate-btn">⚡ Generate Challenge</button>
+        <button class="btn btn-secondary" id="clear-btn">✕ Clear</button>
+      </div>
+
+      <hr class="divider">
+      <div id="challenge-area"></div>
+      <hr class="divider">
+      <div id="category-progress-list"></div>
+    </div>
+  </section>
+
+  <!-- COMPETITION ROOMS ─────────────────────────────────────────────────── -->
+  <section class="page hidden" id="page-rooms">
+    <div class="page-header">
+      <h1>🏆 Competition Rooms</h1>
+      <p>Mini-competitions with their own questions, hints, and leaderboard.</p>
+    </div>
+
+    <div id="room-admin-panel" class="content-card" style="display:none;margin-bottom:20px">
+      <h3>🛡️ Admin — Create Room</h3>
+      <div class="filter-row">
+        <div class="filter-group"><label for="new-room-name">Room name</label><input type="text" id="new-room-name" placeholder="e.g. Weekend Web Sprint"></div>
+        <div class="filter-group"><label for="new-room-desc">Description</label><input type="text" id="new-room-desc" placeholder="Short description"></div>
+      </div>
+      <div class="action-row"><button class="btn btn-primary" id="create-room-btn">Create Room</button></div>
+    </div>
+
+    <div id="rooms-grid" class="rooms-grid"></div>
+  </section>
+
+  <section class="page hidden" id="page-room-detail">
+    <div class="page-header">
+      <button class="btn" id="back-to-rooms-btn" style="margin-bottom:12px">&larr; Back to Rooms</button>
+      <h1 id="room-detail-title">Room</h1>
+      <p id="room-detail-desc"></p>
+    </div>
+
+    <div id="room-add-question-panel" class="content-card" style="display:none;margin-bottom:20px">
+      <h3>🛡️ Admin — Add Question</h3>
+      <div class="filter-row">
+        <div class="filter-group"><label for="rq-title">Title</label><input type="text" id="rq-title" placeholder="Question title"></div>
+        <div class="filter-group"><label for="rq-difficulty">Difficulty</label>
+          <select id="rq-difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option><option>Insane</option></select>
+        </div>
+        <div class="filter-group"><label for="rq-points">Points</label><input type="number" id="rq-points" placeholder="100" value="100"></div>
+      </div>
+      <div class="filter-group" style="margin-top:10px"><label for="rq-desc">Description</label><textarea id="rq-desc" rows="3" style="width:100%;background:#1a1a2e;color:#f0f0ff;border:1px solid rgba(255,77,0,0.3);border-radius:8px;padding:10px" placeholder="Question description"></textarea></div>
+      <div class="filter-group" style="margin-top:10px"><label for="rq-flag">Flag (answer)</label><input type="text" id="rq-flag" style="width:100%" placeholder="DB{correct_answer}"></div>
+      <div class="filter-group" style="margin-top:10px"><label for="rq-hints">Hints (one per line)</label><textarea id="rq-hints" rows="3" style="width:100%;background:#1a1a2e;color:#f0f0ff;border:1px solid rgba(255,77,0,0.3);border-radius:8px;padding:10px" placeholder="Hint 1&#10;Hint 2"></textarea></div>
+      <div class="action-row" style="margin-top:12px"><button class="btn btn-primary" id="add-room-question-btn">Add Question</button></div>
+    </div>
+
+    <div id="room-questions-area"></div>
+
+    <hr class="divider">
+    <div class="page-header"><h2>📊 Room Leaderboard</h2></div>
+    <div class="leaderboard-table">
+      <div class="lb-header"><span>Rank</span><span>Username</span><span>Score</span><span>Solved</span></div>
+      <div id="room-leaderboard-rows"></div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD ──────────────────────────────────────────────────────── -->
+  <section class="page hidden" id="page-leaderboard">
+    <div class="page-header">
+      <h1>📊 Leaderboard</h1>
+      <p>Season 2025 — live rankings</p>
+    </div>
+    <div class="leaderboard-table">
+      <div class="lb-header">
+        <span>Rank</span>
+        <span>Username</span>
+        <span>Score</span>
+        <span>Solved</span>
+      </div>
+      <div id="leaderboard-rows"></div>
+    </div>
+  </section>
+
+  <!-- RESOURCES ──────────────────────────────────────────────────────────── -->
+  <section class="page hidden" id="page-resources">
+    <div class="page-header"><h1>📚 Resources</h1><p>Curated materials for every skill level.</p></div>
+    <div class="tabs">
+      <button class="tab-btn tab-active" data-tab="getting-started">Getting Started</button>
+      <button class="tab-btn" data-tab="cybersecurity">Cybersecurity</button>
+      <button class="tab-btn" data-tab="tools">Tools</button>
+      <button class="tab-btn" data-tab="ctf-practice">CTF Practice</button>
+    </div>
+    <div id="resource-tab-content"></div>
+  </section>
+
+</main>
+
+<!-- ── Auth Modal ────────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="auth-modal" role="dialog" aria-modal="true" aria-label="Sign in or register">
+  <div class="modal">
+    <button class="modal-close" id="auth-modal-close" aria-label="Close">&times;</button>
+    <div class="modal-tabs">
+      <button class="modal-tab modal-tab-active" id="tab-login">Sign In</button>
+      <button class="modal-tab" id="tab-register">Register</button>
+    </div>
+    <div class="dragon-icon-modal">🐉</div>
+
+    <!-- Username field (register only) -->
+    <div id="auth-username-row" style="display:none">
+      <input type="text"  id="auth-username" placeholder="Username (letters, numbers, _)" autocomplete="username">
+    </div>
+    <input type="email"    id="auth-email"    placeholder="Email address" required autocomplete="email">
+    <input type="password" id="auth-password" placeholder="Password (min 6 characters)" required autocomplete="current-password">
+
+    <div id="auth-error" class="auth-error hidden"></div>
+
+    <button class="btn btn-primary btn-block" id="auth-submit" style="margin-top:12px">Sign In</button>
+
+    <div style="text-align:center;margin:12px 0;color:var(--text-dim);font-size:13px">— or continue with —</div>
+
+    <button class="btn btn-block" id="google-signin-btn" style="background:#fff;color:#222;border:1px solid #ddd;margin-bottom:8px">
+      🌐 Continue with Google
+    </button>
+    <button class="btn btn-block" id="github-signin-btn" style="background:#24292e;color:#fff">
+      🐙 Continue with GitHub
+    </button>
+  </div>
+</div>
+
+<!-- ── Scripts ────────────────────────────────────────────────────────────── -->
+<script src="js/data.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
