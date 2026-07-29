@@ -130,6 +130,11 @@ function renderRoomQuestions() {
       <div class="challenge-body"><div class="challenge-description">${esc(q.description).replace(/\n/g, "<br>")}</div></div>
       ${q.code_snippet ? `<pre class="challenge-code">${esc(q.code_snippet)}</pre>` : ""}
       ${q.has_file ? `<div style="margin:10px 0"><a class="btn" href="${API}/room_questions?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(q.id)}&download=1" target="_blank" rel="noopener">📎 Download ${esc(q.file_name || "file")}</a></div>` : ""}
+      ${roomState.isAdmin ? `<div class="attach-file-row" style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap">
+        <span style="font-size:12px;color:#a0a0c0">${q.has_file ? `📎 ${esc(q.file_name || "file")} attached` : "No file attached."}</span>
+        <input type="file" id="qf-file-${q.id}">
+        <button class="btn" onclick="uploadQuestionFile('${q.id}')">⬆️ Upload File</button>
+      </div>` : ""}
       <div class="challenge-footer">
         <div class="flag-submit-row">
           <input type="text" id="room-flag-${q.id}" placeholder="DB{your_flag_here}" autocomplete="off">
@@ -248,6 +253,30 @@ async function addRoomQuestion() {
     if (fileInput) fileInput.value = "";
     const fileNameEl = document.getElementById("rq-file-name");
     if (fileNameEl) fileNameEl.textContent = "";
+    loadRoomDetail();
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+async function uploadQuestionFile(questionId) {
+  const fileInput = document.getElementById(`qf-file-${questionId}`);
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  if (!file) { toast("Choose a file first.", "error"); return; }
+
+  const MAX_BYTES = 650 * 1024; // matches the server-side cap
+  if (file.size > MAX_BYTES) {
+    toast(`File is too large (${Math.round(file.size / 1024)}KB). Max ~650KB.`, "error");
+    return;
+  }
+
+  try {
+    const fileData = await readFileAsBase64(file);
+    await api(`/room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+      method: "POST", auth: true,
+      body: { fileData, fileName: file.name, fileType: file.type || "application/octet-stream" },
+    });
+    toast("File uploaded!", "success");
     loadRoomDetail();
   } catch (err) {
     toast(err.message, "error");
