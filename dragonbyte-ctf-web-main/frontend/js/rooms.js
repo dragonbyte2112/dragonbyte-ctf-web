@@ -119,22 +119,6 @@ function renderRoomQuestions() {
       : "";
     const fb = roomState.feedback[q.id];
     const fbHtml = fb ? `<div class="feedback-banner feedback-${fb.type}">${esc(fb.message)}</div>` : "";
-    const fileRowHtml = (q.file_name || roomState.isAdmin) ? `
-      <div class="challenge-file-row">
-        ${q.file_name
-          ? `<a class="btn btn-primary" href="/api/room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(q.id)}" target="_blank" rel="noopener">
-               📎 Download ${esc(q.file_name)}${q.file_size ? ` (${formatFileSize(q.file_size)})` : ""}
-             </a>
-             ${roomState.isAdmin ? `<button class="btn" style="background:#ff3b5c;color:#fff" onclick="deleteRoomQuestionFile('${q.id}')">Remove File</button>` : ""}`
-          : (roomState.isAdmin ? `<span class="ch-meta-note">No file attached.</span>` : "")
-        }
-        ${roomState.isAdmin ? `
-          <div class="admin-file-upload">
-            <input type="file" id="room-file-input-${q.id}">
-            <button class="btn" onclick="uploadRoomQuestionFile('${q.id}')">⬆️ Upload File</button>
-          </div>` : ""
-        }
-      </div>` : "";
     return `<div class="challenge-header ${q.solved ? "challenge-solved" : ""}" style="margin-bottom:16px">
       <div class="ch-title">${esc(q.title)}</div>
       <div class="ch-meta">
@@ -145,7 +129,12 @@ function renderRoomQuestions() {
       </div>
       <div class="challenge-body"><div class="challenge-description">${esc(q.description).replace(/\n/g, "<br>")}</div></div>
       ${q.code_snippet ? `<pre class="challenge-code">${esc(q.code_snippet)}</pre>` : ""}
-      ${fileRowHtml}
+      ${q.has_file ? `<div style="margin:10px 0"><a class="btn" href="${API}/room_questions?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(q.id)}&download=1" target="_blank" rel="noopener">📎 Download ${esc(q.file_name || "file")}</a></div>` : ""}
+      ${roomState.isAdmin ? `<div class="attach-file-row" style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap">
+        <span style="font-size:12px;color:#a0a0c0">${q.has_file ? `📎 ${esc(q.file_name || "file")} attached` : "No file attached."}</span>
+        <input type="file" id="qf-file-${q.id}">
+        <button class="btn" onclick="uploadQuestionFile('${q.id}')">⬆️ Upload File</button>
+      </div>` : ""}
       <div class="challenge-footer">
         <div class="flag-submit-row">
           <input type="text" id="room-flag-${q.id}" placeholder="DB{your_flag_here}" autocomplete="off">
@@ -174,7 +163,7 @@ async function submitRoomFlag(questionId) {
   if (!flag) return;
   if (!state.user) { toast("Sign in to submit flags.", "error"); return; }
   try {
-    const result = await api(`/submit?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+    const result = await api(`/room_submit?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
       method: "POST", auth: true, body: { flag },
     });
     const q = roomState.questions.find(x => x.id === questionId);
@@ -196,7 +185,7 @@ async function submitRoomFlag(questionId) {
 
 async function revealRoomHint(questionId) {
   try {
-    const result = await api(`/hint?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+    const result = await api(`/room_hint?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
       method: "POST", auth: true,
     });
     const q = roomState.questions.find(x => x.id === questionId);
@@ -211,6 +200,19 @@ async function revealRoomHint(questionId) {
   }
 }
 
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // result looks like "data:<mime>;base64,<data>" — strip the prefix
+      const commaIdx = reader.result.indexOf(",");
+      resolve(reader.result.slice(commaIdx + 1));
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 async function addRoomQuestion() {
   const title = document.getElementById("rq-title").value.trim();
   const description = document.getElementById("rq-desc").value.trim();
@@ -218,16 +220,63 @@ async function addRoomQuestion() {
   const points = document.getElementById("rq-points").value.trim() || 100;
   const difficulty = document.getElementById("rq-difficulty").value;
   const hints = document.getElementById("rq-hints").value.split("\n").map(s => s.trim()).filter(Boolean);
+  const fileInput = document.getElementById("rq-file");
+  const file = fileInput && fileInput.files && fileInput.files[0];
 
   if (!title || !description || !flag) { toast("Title, description and flag are required.", "error"); return; }
 
+  const body = { title, description, flag, points, difficulty, hints };
+
+  if (file) {
+    const MAX_BYTES = 650 * 1024; // matches the server-side cap
+    if (file.size > MAX_BYTES) {
+      toast(`File is too large (${Math.round(file.size / 1024)}KB). Max ~650KB.`, "error");
+      return;
+    }
+    try {
+      body.fileData = await readFileAsBase64(file);
+      body.fileName = file.name;
+      body.fileType = file.type || "application/octet-stream";
+    } catch {
+      toast("Could not read the selected file.", "error");
+      return;
+    }
+  }
+
   try {
     await api(`/room_questions?roomId=${encodeURIComponent(roomState.currentRoom)}`, {
-      method: "POST", auth: true, body: { title, description, flag, points, difficulty, hints },
+      method: "POST", auth: true, body,
     });
     toast("Question added!", "success");
     ["rq-title", "rq-desc", "rq-flag", "rq-hints"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("rq-points").value = "100";
+    if (fileInput) fileInput.value = "";
+    const fileNameEl = document.getElementById("rq-file-name");
+    if (fileNameEl) fileNameEl.textContent = "";
+    loadRoomDetail();
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+async function uploadQuestionFile(questionId) {
+  const fileInput = document.getElementById(`qf-file-${questionId}`);
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  if (!file) { toast("Choose a file first.", "error"); return; }
+
+  const MAX_BYTES = 650 * 1024; // matches the server-side cap
+  if (file.size > MAX_BYTES) {
+    toast(`File is too large (${Math.round(file.size / 1024)}KB). Max ~650KB.`, "error");
+    return;
+  }
+
+  try {
+    const fileData = await readFileAsBase64(file);
+    await api(`/room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+      method: "POST", auth: true,
+      body: { fileData, fileName: file.name, fileType: file.type || "application/octet-stream" },
+    });
+    toast("File uploaded!", "success");
     loadRoomDetail();
   } catch (err) {
     toast(err.message, "error");
@@ -247,49 +296,12 @@ async function deleteRoomQuestion(questionId) {
   }
 }
 
-async function uploadRoomQuestionFile(questionId) {
-  const input = document.getElementById(`room-file-input-${questionId}`);
-  const file  = input?.files?.[0];
-  if (!file) { toast("Choose a file first.", "error"); return; }
-  if (file.size > 4 * 1024 * 1024) { toast("File too large — max 4MB.", "error"); return; }
-
-  try {
-    const fileBase64 = await fileToBase64(file);
-    await api("/room_question_file", {
-      method: "POST",
-      auth:   true,
-      body:   { roomId: roomState.currentRoom, questionId, filename: file.name, contentType: file.type, fileBase64 },
-    });
-    toast("File uploaded.", "success");
-    const q = roomState.questions.find(x => x.id === questionId);
-    if (q) { q.file_name = file.name; q.file_size = file.size; }
-    renderRoomQuestions();
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-async function deleteRoomQuestionFile(questionId) {
-  if (!confirm("Remove the attached file from this question?")) return;
-  try {
-    await api(`/room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
-      method: "DELETE", auth: true,
-    });
-    toast("File removed.", "success");
-    const q = roomState.questions.find(x => x.id === questionId);
-    if (q) { q.file_name = null; q.file_size = null; }
-    renderRoomQuestions();
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
 async function loadRoomLeaderboard() {
   const el = document.getElementById("room-leaderboard-rows");
   if (!el) return;
   el.innerHTML = `<div class="lb-row"><span></span><span>Loading&hellip;</span><span></span><span></span></div>`;
   try {
-    const leaders = await api(`/leaderboard?roomId=${encodeURIComponent(roomState.currentRoom)}`);
+    const leaders = await api(`/room_leaderboard?roomId=${encodeURIComponent(roomState.currentRoom)}`);
     if (!leaders.length) {
       el.innerHTML = `<div class="lb-row"><span></span><span>No solves yet — be the first!</span><span></span><span></span></div>`;
       return;
@@ -308,4 +320,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("create-room-btn")?.addEventListener("click", createRoom);
   document.getElementById("add-room-question-btn")?.addEventListener("click", addRoomQuestion);
   document.getElementById("back-to-rooms-btn")?.addEventListener("click", () => setPage("rooms"));
+  document.getElementById("rq-file")?.addEventListener("change", (e) => {
+    const el = document.getElementById("rq-file-name");
+    const f = e.target.files && e.target.files[0];
+    if (el) el.textContent = f ? `${f.name} (${Math.round(f.size / 1024)}KB)` : "";
+  });
 });
