@@ -272,8 +272,8 @@ async function uploadQuestionFile(questionId) {
 
   try {
     const fileData = await readFileAsBase64(file);
-    await api(`/room_question_file?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
-      method: "POST", auth: true,
+    await api(`/room_questions?roomId=${encodeURIComponent(roomState.currentRoom)}&questionId=${encodeURIComponent(questionId)}`, {
+      method: "PUT", auth: true,
       body: { fileData, fileName: file.name, fileType: file.type || "application/octet-stream" },
     });
     toast("File uploaded!", "success");

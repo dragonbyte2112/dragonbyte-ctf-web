@@ -1,5 +1,4 @@
 import { getFirestore } from "firebase-admin/firestore";
-import { getStorage } from "firebase-admin/storage";
 import { initAdmin } from "./_firebase.js";
 import { optionalAuth } from "./_auth.js";
 import { requireAdmin } from "./_admin.js";
@@ -11,7 +10,7 @@ function hashFlag(f) {
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Authorization,Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
@@ -20,6 +19,27 @@ export default async function handler(req, res) {
   const { roomId } = req.query;
   if (!roomId) return res.status(400).json({ detail: "Missing roomId" });
   const roomRef = db.collection("rooms").doc(String(roomId));
+
+  // ── Download the file attached to one question (public — no auth required) ──
+  if (req.method === "GET" && req.query.download === "1") {
+    const { questionId } = req.query;
+    if (!questionId) return res.status(400).json({ detail: "Missing questionId" });
+    try {
+      const qDoc = await roomRef.collection("questions").doc(String(questionId)).get();
+      if (!qDoc.exists) return res.status(404).json({ detail: "Question not found." });
+      const q = qDoc.data();
+      if (!q.file_data) return res.status(404).json({ detail: "No file attached to this question." });
+      const buffer = Buffer.from(q.file_data, "base64");
+      const safeName = (q.file_name || "challenge-file").replace(/[\r\n"]/g, "");
+      res.setHeader("Content-Type", q.file_type || "application/octet-stream");
+      res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
+      res.setHeader("Content-Length", buffer.length);
+      return res.status(200).send(buffer);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ detail: "Internal server error" });
+    }
+  }
 
   // ── List questions in the room, with per-user solved/hint state ──
   if (req.method === "GET") {
@@ -57,8 +77,8 @@ export default async function handler(req, res) {
           total_hints: hints.length,
           hints_revealed: rc,
           revealed_hints: hints.slice(0, rc),
+          has_file: !!q.file_data,
           file_name: q.file_name || null,
-          file_size: q.file_size || null,
         };
       });
 
@@ -73,14 +93,20 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     const admin = await requireAdmin(req, res);
     if (!admin) return;
-    const { title, description, difficulty, points, flag, hints, code_snippet, code_lang } = req.body || {};
+    const { title, description, difficulty, points, flag, hints, code_snippet, code_lang, fileData, fileName, fileType } = req.body || {};
     if (!title || !description || !flag) {
       return res.status(400).json({ detail: "title, description and flag are required." });
+    }
+    // Firestore caps documents at 1MB total; base64 is ~33% larger than the raw
+    // file, so cap the base64 string well below that to leave room for the
+    // rest of the fields (description, hints, etc).
+    if (fileData && fileData.length > 900000) {
+      return res.status(400).json({ detail: "Attached file is too large (max ~650KB)." });
     }
     try {
       const roomDoc = await roomRef.get();
       if (!roomDoc.exists) return res.status(404).json({ detail: "Room not found." });
-      const ref = await roomRef.collection("questions").add({
+      const doc = {
         title: String(title).trim(),
         description: String(description).trim(),
         difficulty: difficulty || "Medium",
@@ -89,10 +115,48 @@ export default async function handler(req, res) {
         hints: Array.isArray(hints) ? hints.filter(Boolean) : [],
         code_snippet: code_snippet || null,
         code_lang: code_lang || null,
-      });
+      };
+      if (fileData) {
+        doc.file_data = String(fileData);
+        doc.file_name = String(fileName || "challenge-file").slice(0, 200);
+        doc.file_type = String(fileType || "application/octet-stream").slice(0, 100);
+      }
+      const ref = await roomRef.collection("questions").add(doc);
       return res.status(200).json({ id: ref.id });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ detail: "Internal server error" });
+    }
+  }
+
+  // ── Attach or replace the file on an existing question (admin only) ──
+  // Folded into this file (rather than a separate api/room_question_file.js)
+  // to avoid exceeding Vercel Hobby's 12-serverless-function-per-deployment cap.
+  if (req.method === "PUT") {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    const { questionId } = req.query;
+    if (!questionId) return res.status(400).json({ detail: "Missing questionId" });
+
+    const { fileData, fileName, fileType } = req.body || {};
+    if (!fileData) return res.status(400).json({ detail: "No file data provided." });
+    if (fileData.length > 900000) {
+      return res.status(400).json({ detail: "Attached file is too large (max ~650KB)." });
+    }
+
+    try {
+      const qRef = roomRef.collection("questions").doc(String(questionId));
+      const qDoc = await qRef.get();
+      if (!qDoc.exists) return res.status(404).json({ detail: "Question not found." });
+
+      await qRef.update({
+        file_data: String(fileData),
+        file_name: String(fileName || "challenge-file").slice(0, 200),
+        file_type: String(fileType || "application/octet-stream").slice(0, 100),
+      });
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("room_questions PUT (file attach) error:", err);
       return res.status(500).json({ detail: "Internal server error" });
     }
   }
@@ -104,13 +168,7 @@ export default async function handler(req, res) {
     const { questionId } = req.query;
     if (!questionId) return res.status(400).json({ detail: "Missing questionId" });
     try {
-      const qDocRef = roomRef.collection("questions").doc(String(questionId));
-      const qDoc = await qDocRef.get();
-      const filePath = qDoc.exists ? qDoc.data().file_path : null;
-      if (filePath) {
-        await getStorage().bucket().file(filePath).delete({ ignoreNotFound: true });
-      }
-      await qDocRef.delete();
+      await roomRef.collection("questions").doc(String(questionId)).delete();
       return res.status(200).json({ ok: true });
     } catch (err) {
       console.error(err);
